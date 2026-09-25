@@ -173,9 +173,18 @@ The system instruction explicitly guards against:
 
 ---
 
-## 📚 Customizing Knowledge Base (`data/knowledge.json`)
+## 📚 Customizing the Knowledge Base (`backend/data/`)
 
-To update or expand what the chatbot knows:
+The retriever automatically scans and indexes all knowledge files dropped into `backend/data/`:
+
+1. **Markdown Files (`.md`, `.markdown`)**:
+   - Split by markdown headings (`# `, `## `, `### `) into focused document chunks.
+   - Example: dropping `faq.md` or `company_policy.md` immediately indexes each section.
+2. **Text Files (`.txt`)**:
+   - Automatically loaded and chunked into ~800-character segments.
+   - Example: `contact.txt` or `notes.txt`.
+3. **Structured JSON Files (`.json`)**:
+   - List of document objects (like `knowledge.json`) with `id`, `title`, `category`, and `content`.
 
 ```json
 [
@@ -189,4 +198,4 @@ To update or expand what the chatbot knows:
 ]
 ```
 
-The backend computes a SHA-256 hash of `knowledge.json` and automatically invalidates and regenerates vector embeddings on startup.
+The backend computes a SHA-256 hash across all knowledge documents and automatically invalidates and regenerates vector embeddings on startup.

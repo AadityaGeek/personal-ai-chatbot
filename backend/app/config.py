@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     embedding_model: str = Field(default="gemini-embedding-001", alias="EMBEDDING_MODEL")
     temperature: float = Field(default=0.2, alias="TEMPERATURE")
     
+    data_dir: Path = BASE_DIR / "data"
     knowledge_path: Path = BASE_DIR / "data" / "knowledge.json"
     cache_path: Path = BASE_DIR / "data" / "embeddings_cache.json"
 

@@ -1,6 +1,7 @@
 import json
 import logging
 import hashlib
+import re
 from pathlib import Path
 from typing import Any
 import numpy as np
@@ -9,8 +10,15 @@ from app.config import settings
 
 logger = logging.getLogger("chatbot.rag")
 
+
 class KnowledgeRetriever:
-    def __init__(self, knowledge_path: Path = settings.knowledge_path, cache_path: Path = settings.cache_path):
+    def __init__(
+        self,
+        data_dir: Path = settings.data_dir,
+        knowledge_path: Path = settings.knowledge_path,
+        cache_path: Path = settings.cache_path,
+    ):
+        self.data_dir = data_dir
         self.knowledge_path = knowledge_path
         self.cache_path = cache_path
         self.documents: list[dict[str, Any]] = []
@@ -33,19 +41,215 @@ class KnowledgeRetriever:
     def _compute_hash(self, content_str: str) -> str:
         return hashlib.sha256(content_str.encode("utf-8")).hexdigest()
 
+    def _chunk_text(self, text: str, max_chars: int = 1200, overlap: int = 150) -> list[str]:
+        text = text.strip()
+        if not text:
+            return []
+        if len(text) <= max_chars:
+            return [text]
+
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+        chunks = []
+        current_chunk: list[str] = []
+        current_len = 0
+
+        for para in paragraphs:
+            para_len = len(para)
+            if current_len + para_len > max_chars and current_chunk:
+                chunks.append("\n\n".join(current_chunk))
+                current_chunk = []
+                current_len = 0
+
+            # If a single paragraph is larger than max_chars, split on lines or length
+            if para_len > max_chars:
+                lines = para.split("\n")
+                sub_chunk: list[str] = []
+                sub_len = 0
+                for line in lines:
+                    if sub_len + len(line) > max_chars and sub_chunk:
+                        chunks.append("\n".join(sub_chunk))
+                        sub_chunk = []
+                        sub_len = 0
+                    sub_chunk.append(line)
+                    sub_len += len(line) + 1
+                if sub_chunk:
+                    chunks.append("\n".join(sub_chunk))
+            else:
+                current_chunk.append(para)
+                current_len += para_len + 2
+
+        if current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+
+        return chunks if chunks else [text]
+
+    def _parse_markdown(self, file_path: Path) -> list[dict[str, Any]]:
+        docs = []
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except Exception as e:
+            logger.error(f"Error reading markdown file {file_path}: {e}")
+            return docs
+
+        sections = re.split(r"(?m)^(#{1,4}\s+.+)$", text)
+        stem = file_path.stem
+        category = stem.replace("_", " ").replace("-", " ").title()
+
+        if len(sections) <= 1:
+            chunks = self._chunk_text(text)
+            for i, chunk in enumerate(chunks):
+                suffix = f" (Part {i+1})" if len(chunks) > 1 else ""
+                docs.append({
+                    "id": f"{stem}-chunk-{i+1}",
+                    "title": f"{category}{suffix}",
+                    "category": category,
+                    "content": chunk,
+                    "url": f"local://{file_path.name}",
+                })
+            return docs
+
+        # First section before the first heading (intro)
+        if sections[0].strip():
+            intro_chunks = self._chunk_text(sections[0].strip())
+            for i, chunk in enumerate(intro_chunks):
+                docs.append({
+                    "id": f"{stem}-intro-{i+1}",
+                    "title": f"{category} - Overview",
+                    "category": category,
+                    "content": chunk,
+                    "url": f"local://{file_path.name}",
+                })
+
+        # Process heading + content pairs
+        for i in range(1, len(sections), 2):
+            heading_line = sections[i].strip()
+            heading_text = re.sub(r"^#{1,4}\s*", "", heading_line).strip()
+            section_content = sections[i + 1].strip() if i + 1 < len(sections) else ""
+            if not section_content:
+                continue
+
+            chunks = self._chunk_text(section_content)
+            slug = re.sub(r"[^a-zA-Z0-9]+", "-", heading_text).strip("-").lower()
+            for j, chunk in enumerate(chunks):
+                suffix = f" (Part {j+1})" if len(chunks) > 1 else ""
+                docs.append({
+                    "id": f"{stem}-{slug}-{j+1}",
+                    "title": f"{heading_text}{suffix}",
+                    "category": category,
+                    "content": chunk,
+                    "url": f"local://{file_path.name}",
+                })
+
+        return docs
+
+    def _parse_text(self, file_path: Path) -> list[dict[str, Any]]:
+        docs = []
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except Exception as e:
+            logger.error(f"Error reading text file {file_path}: {e}")
+            return docs
+
+        stem = file_path.stem
+        title = stem.replace("_", " ").replace("-", " ").title()
+        chunks = self._chunk_text(text)
+        for i, chunk in enumerate(chunks):
+            suffix = f" (Part {i+1})" if len(chunks) > 1 else ""
+            docs.append({
+                "id": f"{stem}-chunk-{i+1}",
+                "title": f"{title}{suffix}",
+                "category": title,
+                "content": chunk,
+                "url": f"local://{file_path.name}",
+            })
+        return docs
+
+    def _parse_json(self, file_path: Path) -> list[dict[str, Any]]:
+        if file_path.name == self.cache_path.name:
+            return []
+        docs = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict):
+                        doc_id = item.get("id") or f"{file_path.stem}-{len(docs)+1}"
+                        title = item.get("title") or item.get("question") or f"{file_path.stem} Item {len(docs)+1}"
+                        category = item.get("category") or file_path.stem.title()
+                        content = item.get("content") or item.get("answer") or item.get("text") or ""
+                        if content:
+                            docs.append({
+                                "id": str(doc_id),
+                                "title": str(title),
+                                "category": str(category),
+                                "content": str(content),
+                                "url": item.get("url", f"local://{file_path.name}"),
+                            })
+            elif isinstance(data, dict):
+                if "documents" in data and isinstance(data["documents"], list):
+                    for item in data["documents"]:
+                        if isinstance(item, dict) and item.get("content"):
+                            docs.append({
+                                "id": str(item.get("id", f"{file_path.stem}-{len(docs)+1}")),
+                                "title": str(item.get("title", f"{file_path.stem} Item")),
+                                "category": str(item.get("category", file_path.stem.title())),
+                                "content": str(item.get("content")),
+                                "url": item.get("url", f"local://{file_path.name}"),
+                            })
+                else:
+                    for key, val in data.items():
+                        if isinstance(val, (str, dict)):
+                            content = val if isinstance(val, str) else json.dumps(val)
+                            docs.append({
+                                "id": f"{file_path.stem}-{re.sub(r'[^a-zA-Z0-9]+', '-', key).lower()}",
+                                "title": key,
+                                "category": file_path.stem.title(),
+                                "content": content,
+                                "url": f"local://{file_path.name}",
+                            })
+        except Exception as e:
+            logger.error(f"Error reading JSON file {file_path}: {e}")
+        return docs
+
     def _load_knowledge(self):
-        if not self.knowledge_path.exists():
-            logger.warning(f"Knowledge file {self.knowledge_path} not found. Creating empty list.")
-            self.documents = []
+        loaded_docs: list[dict[str, Any]] = []
+        loaded_files: list[str] = []
+
+        if not self.data_dir.exists():
+            logger.warning(f"Data directory {self.data_dir} not found.")
+            if self.knowledge_path.exists():
+                loaded_docs.extend(self._parse_json(self.knowledge_path))
+                loaded_files.append(self.knowledge_path.name)
+            self.documents = loaded_docs
             return
 
-        try:
-            with open(self.knowledge_path, "r", encoding="utf-8") as f:
-                self.documents = json.load(f)
-            logger.info(f"Loaded {len(self.documents)} knowledge documents.")
-        except Exception as e:
-            logger.error(f"Error reading knowledge.json: {e}")
-            self.documents = []
+        # Scan data directory for all supported file formats
+        sorted_files = sorted(self.data_dir.iterdir(), key=lambda p: p.name.lower())
+        for file_path in sorted_files:
+            if not file_path.is_file():
+                continue
+            if file_path.name == self.cache_path.name:
+                continue
+
+            suffix = file_path.suffix.lower()
+            file_docs: list[dict[str, Any]] = []
+            if suffix == ".json":
+                file_docs = self._parse_json(file_path)
+            elif suffix in (".md", ".markdown"):
+                file_docs = self._parse_markdown(file_path)
+            elif suffix == ".txt":
+                file_docs = self._parse_text(file_path)
+
+            if file_docs:
+                loaded_docs.extend(file_docs)
+                loaded_files.append(file_path.name)
+
+        self.documents = loaded_docs
+        logger.info(
+            f"Loaded {len(self.documents)} knowledge documents across {len(loaded_files)} files: {', '.join(loaded_files)}"
+        )
 
     def _document_to_text(self, doc: dict[str, Any]) -> str:
         title = doc.get("title", "")
@@ -101,7 +305,6 @@ class KnowledgeRetriever:
                     else:
                         raise model_err
 
-                # handle both single and list output
                 if hasattr(result, "embeddings") and result.embeddings:
                     values = result.embeddings[0].values
                 elif hasattr(result, "embedding") and result.embedding:
@@ -123,14 +326,13 @@ class KnowledgeRetriever:
 
     def _keyword_search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
         stop_words = {
-            "how", "to", "do", "i", "on", "my", "the", "a", "an", "is", "in", "it", 
-            "this", "can", "and", "for", "with", "what", "are", "of", "about", "your", 
+            "how", "to", "do", "i", "on", "my", "the", "a", "an", "is", "in", "it",
+            "this", "can", "and", "for", "with", "what", "are", "of", "about", "your",
             "does", "tell", "me", "give", "please", "why", "when", "where", "who", "which"
         }
         words = [w.strip("?,.!:;\"'") for w in query.lower().split()]
         query_words = [w for w in words if w and w not in stop_words and len(w) > 2]
         if not query_words:
-            # If only stop words or very short words were provided, no meaningful knowledge match
             return []
 
         scored_docs = []
@@ -138,7 +340,7 @@ class KnowledgeRetriever:
             title = doc.get("title", "").lower()
             category = doc.get("category", "").lower()
             content = doc.get("content", "").lower()
-            
+
             score = 0
             for word in query_words:
                 if word in title:
@@ -202,5 +404,6 @@ class KnowledgeRetriever:
 
         # Fallback to keyword search
         return self._keyword_search(query, top_k=top_k)
+
 
 retriever = KnowledgeRetriever()
