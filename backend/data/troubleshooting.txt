@@ -1,0 +1,16 @@
+AI Chatbot Troubleshooting & Diagnostic Guide
+
+1. Missing or Invalid Gemini API Key:
+If the chatbot returns connection or authorization errors, ensure that your GEMINI_API_KEY is configured in backend/.env. You can obtain a free API key directly from Google AI Studio at https://aistudio.google.com/. Verify that the key has active permissions for Gemini 3.5 Flash Lite and embedding models.
+
+2. Updating Knowledge and Embedding Cache:
+Whenever you add, modify, or delete files in the backend/data/ directory (such as Markdown or text files), restart the backend server with 'python run.py'. The backend calculates a SHA-256 hash across all documents and will automatically regenerate backend/data/embeddings_cache.json on startup.
+
+3. CORS Origins and Cross-Domain Embedding:
+If embedding the widget on an external domain and encountering network errors, update CORS_ORIGINS in backend/.env to include your production domain (e.g. CORS_ORIGINS=https://yourdomain.com), or use CORS_ORIGINS=* during local development.
+
+4. Rate Limiting Limits:
+The chatbot API enforces rate limiting via SlowAPI to safeguard against denial-of-service and free quota exhaustion. By default, clients are limited to 20 requests per minute. You can adjust RATE_LIMIT_PER_MINUTE in backend/.env as needed for higher traffic workloads.
+
+5. Technical Support and Bug Reporting:
+To report bugs or ask questions regarding deployment, open an issue on the official GitHub repository at https://github.com/AadityaGeek/personal-ai-chatbot/issues or reach out directly to the author Aaditya Kumar on GitHub.

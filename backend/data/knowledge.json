@@ -4,55 +4,55 @@
     "title": "What is this AI Chatbot Widget?",
     "category": "About",
     "content": "This is a standalone, production-ready AI Chatbot widget system designed to be embedded into any website or web application. It features a high-performance **Python FastAPI** backend paired with a sleek, glassmorphic **React + Tailwind CSS** frontend. It is powered by **Google Gemini 3.5 Flash Lite** and uses local vector embeddings for fast, accurate semantic retrieval.",
-    "url": "https://github.com/example/chatbot"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot"
   },
   {
     "id": "vector-semantic-search",
     "title": "How Vector Embeddings & Semantic Search Work",
     "category": "Architecture",
     "content": "The chatbot uses **vector embeddings** generated via Google's `gemini-embedding-001` model. Each document in the knowledge base is converted into a high-dimensional vector and cached locally.\n\nWhen a user asks a question, the question is converted into a vector and compared using **Cosine Similarity**. This allows the bot to instantly find relevant answers even if you use different words or synonyms (e.g., asking *'what is the price?'* or *'how much does this cost?'* will both match the pricing knowledge because they have similar semantic meanings).",
-    "url": "https://github.com/example/chatbot#vector-rag"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#vector-rag"
   },
   {
     "id": "secrecy-security",
     "title": "Security, Guardrails & Secret Protection",
     "category": "Security",
     "content": "The chatbot is built with strict security guardrails:\n1. **Secret & Prompt Protection**: It will **never** reveal internal system prompts, hidden developer instructions, proprietary prompt engineering flows, or API credentials.\n2. **Rate Limiting**: Integrated **SlowAPI** rate limiting prevents automated abuse, scraping, and denial-of-service.\n3. **CORS Protection**: Configurable allowed origins to restrict API access to authorized domains.\n4. **Zero-Hallucination Grounding**: The bot is strictly constrained to answer only from verified knowledge documentation.",
-    "url": "https://github.com/example/chatbot#security"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#security"
   },
   {
     "id": "how-to-embed",
     "title": "How to Embed this Chatbot on Your Website",
     "category": "Integration",
-    "content": "Embedding the chatbot is straightforward:\n- **In React / Next.js**: Copy the `ChatWidget` component into your project and place `<ChatWidget defaultOpen={false} />` in your root layout.\n- **As a Standalone Widget**: The widget renders in the bottom-right corner as a floating launcher bubble. When clicked, it expands into a full-height glassmorphic drawer.\n- Check out the full integration instructions in the [Integration Guide](https://github.com/example/chatbot#embedding).",
-    "url": "https://github.com/example/chatbot#embedding"
+    "content": "Embedding the chatbot is straightforward:\n- **In React / Next.js**: Copy the `ChatWidget` component into your project and place `<ChatWidget defaultOpen={false} />` in your root layout.\n- **As a Standalone Widget**: The widget renders in the bottom-right corner as a floating launcher bubble. When clicked, it expands into a full-height glassmorphic drawer.\n- Check out the full integration instructions in the [Integration Guide](https://github.com/AadityaGeek/personal-ai-chatbot#embedding).",
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#embedding"
   },
   {
     "id": "ui-features",
     "title": "UI Features & User Experience",
     "category": "Frontend",
     "content": "Key frontend features include:\n- **Full Vertical Drawer**: Takes the full vertical height of the screen for maximum reading space.\n- **Glassmorphic Dark Theme**: Zinc-950 backdrop with subtle blur, border highlights, and ambient violet/indigo glows.\n- **Real-Time Streaming**: Server-Sent Events (SSE) provide instant typewriter-style output with toggle between stream and batch mode.\n- **Markdown Rendering**: Full support for bullet lists, bold text, code blocks, and clickable external links.\n- **Quick-Prompt Starter Chips**: Interactive chips for instant 1-click inquiries.\n- **Auto-Scrolling & History**: Auto-scroll lock, copy message action, clear history, and inline retry button on connection errors.",
-    "url": "https://github.com/example/chatbot#features"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#features"
   },
   {
     "id": "customizing-knowledge",
     "title": "How to Customize the Knowledge Base",
     "category": "Customization",
     "content": "You can customize what the chatbot knows simply by editing `backend/data/knowledge.json`.\nEach entry contains:\n- `id`: Unique identifier string\n- `title`: Topic or question name\n- `category`: Category tag (e.g. Billing, Features, Setup)\n- `content`: Detailed documentation with clean Markdown and links\n- `url`: Optional source link\n\nThe backend computes a SHA-256 hash of the knowledge base and automatically recalculates embeddings whenever `knowledge.json` is modified.",
-    "url": "https://github.com/example/chatbot#customization"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#customization"
   },
   {
     "id": "backend-tech-stack",
     "title": "Backend Tech Stack & Performance",
     "category": "Backend",
     "content": "The backend is built with:\n- **FastAPI**: Asynchronous Python web framework for ultra-low latency.\n- **Google GenAI SDK**: Direct integration with `gemini-3.5-flash-lite` at temperature `0.2`.\n- **NumPy Cosine Similarity**: In-memory vector math delivering sub-millisecond retrieval without the heavy C++ build baggage of ChromaDB.\n- **SlowAPI**: Token bucket / sliding window rate limiting.\n- **Pydantic v2**: Strict schema validation for all requests and responses.",
-    "url": "https://github.com/example/chatbot#architecture"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#architecture"
   },
   {
     "id": "supported-models-and-setup",
     "title": "API Keys, Supported Models & Setup",
     "category": "Setup",
     "content": "To run the chatbot:\n1. Obtain a free API key from [Google AI Studio](https://aistudio.google.com/).\n2. Add `GEMINI_API_KEY=your_key` in `backend/.env`.\n3. The chatbot uses `gemini-3.5-flash-lite` for high-speed, cost-effective reasoning and `gemini-embedding-001` for vector embeddings.\n4. Run the backend via `python run.py` and frontend via `npm run dev`.",
-    "url": "https://github.com/example/chatbot#quickstart"
+    "url": "https://github.com/AadityaGeek/personal-ai-chatbot#quickstart"
   }
 ]
