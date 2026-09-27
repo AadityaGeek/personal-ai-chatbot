@@ -306,9 +306,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="flex items-center justify-between mt-2 px-1 text-[10px] text-zinc-500">
           <span className="flex items-center gap-1">
             <Sparkles className="w-2.5 h-2.5 text-indigo-400/80" />
-            <span>Powered by {activeModel}</span>
+            <span className="truncate max-w-[200px] sm:max-w-none">Powered by {activeModel}</span>
           </span>
-          <span>Shift + Enter for new line</span>
+          <span className="hidden sm:inline">Shift + Enter for new line</span>
         </div>
       </div>
     </motion.div>

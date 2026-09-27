@@ -59,7 +59,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ defaultOpen = false, onO
       </AnimatePresence>
 
       {/* Floating Launcher Bubble - Hidden when chat window is open */}
-      <div className="fixed bottom-6 right-6 z-40 pointer-events-none">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 pointer-events-none">
         <AnimatePresence>
           {!isOpen && (
             <motion.button
