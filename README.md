@@ -199,3 +199,37 @@ The retriever automatically scans and indexes all knowledge files dropped into `
 ```
 
 The backend computes a SHA-256 hash across all knowledge documents and automatically invalidates and regenerates vector embeddings on startup.
+
+---
+
+## 🚀 Production Deployment (Vercel + Render)
+
+This project is pre-configured for a seamless split deployment:
+* **Backend (FastAPI + Vector RAG)**: Deployed to **Render** as a Python Web Service.
+* **Frontend (React + Tailwind CSS)**: Deployed to **Vercel** with SPA rewrites.
+
+### Step 1: Deploy Backend to Render
+
+1. Push your repository to GitHub.
+2. Sign in to [Render](https://render.com).
+3. Click **New +** → **Web Service** and connect your repository:
+   - **Name**: `ai-chatbot-backend`
+   - **Root Directory**: `backend`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. In the Environment Variables section, add:
+   - `GEMINI_API_KEY`: Your Gemini API key from Google AI Studio.
+5. Click **Create Web Service**. Once deployed, copy your service URL (e.g., `https://ai-chatbot-backend.onrender.com`).
+
+### Step 2: Deploy Frontend to Vercel
+
+1. Sign in to [Vercel](https://vercel.com) and click **Add New...** → **Project**.
+2. Select your GitHub repository.
+3. Configure the project:
+   - **Framework Preset**: `Vite`
+   - **Root Directory**: Click *Edit* and select `frontend`.
+4. In the **Environment Variables** section, add:
+   - `VITE_API_BASE_URL`: `https://your-chatbot-backend.onrender.com` (your Render URL from Step 1).
+5. Click **Deploy**. Vercel will build and host your frontend globally with instant edge CDN.
+

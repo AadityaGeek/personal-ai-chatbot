@@ -1,6 +1,16 @@
 import type { ChatRequestPayload, ChatResponsePayload, SourceItem } from '../types/chat';
 
-const API_BASE = '/api';
+// Resolve API base URL: defaults to local proxy '/api', or uses VITE_API_BASE_URL in production (e.g. Vercel)
+const getApiBase = (): string => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (!envUrl) {
+    return '/api';
+  }
+  const cleanUrl = envUrl.replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+};
+
+const API_BASE = getApiBase();
 
 export const FALLBACK_OFFLINE_MESSAGE =
   'The assistant is currently offline or unreachable. Please check that the backend server is running and try again.';
