@@ -252,8 +252,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           />
         ))}
 
-        {/* Thinking Indicator (if loading and no stream token yet) */}
-        {isLoading && (!useStreaming || !messages.some((m) => m.id.startsWith('bot-') && m.timestamp.getTime() > Date.now() - 5000)) && (
+        {/* Thinking Indicator (if loading and assistant hasn't started generating content) */}
+        {isLoading && (!useStreaming || messages[messages.length - 1]?.role !== 'assistant' || !messages[messages.length - 1]?.content) && (
           <TypingIndicator />
         )}
 

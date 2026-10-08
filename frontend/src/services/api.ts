@@ -48,7 +48,7 @@ export async function sendChatMessage(payload: ChatRequestPayload): Promise<Chat
       },
       body: JSON.stringify(payload),
     });
-  } catch (err: any) {
+  } catch {
     throw new ChatApiError(FALLBACK_OFFLINE_MESSAGE, undefined, true);
   }
 

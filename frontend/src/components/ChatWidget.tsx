@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Sparkles } from 'lucide-react';
-import { ChatWindow } from './ChatWindow';
+
+const ChatWindow = lazy(() => import('./ChatWindow').then((m) => ({ default: m.ChatWindow })));
 
 import type { Message } from '../types/chat';
 import { INITIAL_GREETING } from '../types/chat';
@@ -16,9 +17,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ defaultOpen = false, onO
   const [messages, setMessages] = useState<Message[]>([INITIAL_GREETING]);
   const [useStreaming, setUseStreaming] = useState(true);
 
-  useEffect(() => {
+  const [prevDefaultOpen, setPrevDefaultOpen] = useState(defaultOpen);
+  if (defaultOpen !== prevDefaultOpen) {
+    setPrevDefaultOpen(defaultOpen);
     setIsOpen(defaultOpen);
-  }, [defaultOpen]);
+  }
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -46,13 +49,15 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ defaultOpen = false, onO
               className="fixed inset-0 bg-black/40 backdrop-blur-xs sm:hidden z-40 pointer-events-auto"
             />
             <div className="fixed inset-0 z-50 pointer-events-none">
-              <ChatWindow
-                onClose={handleClose}
-                messages={messages}
-                setMessages={setMessages}
-                useStreaming={useStreaming}
-                setUseStreaming={setUseStreaming}
-              />
+              <Suspense fallback={null}>
+                <ChatWindow
+                  onClose={handleClose}
+                  messages={messages}
+                  setMessages={setMessages}
+                  useStreaming={useStreaming}
+                  setUseStreaming={setUseStreaming}
+                />
+              </Suspense>
             </div>
           </>
         )}

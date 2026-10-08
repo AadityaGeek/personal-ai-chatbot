@@ -10,7 +10,7 @@ interface ChatMessageProps {
   onRetry?: () => void;
 }
 
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onRetry }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message, onRetry }) => {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
 
@@ -93,7 +93,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onRetry }) =>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  a: ({ node, ...props }) => (
+                  a: ({ ...props }) => (
                     <a
                       {...props}
                       target="_blank"
@@ -151,4 +151,4 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, onRetry }) =>
       </div>
     </motion.div>
   );
-};
+});
