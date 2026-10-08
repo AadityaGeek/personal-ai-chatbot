@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChatWidget } from './components/ChatWidget';
 import { Footer } from './components/Footer';
 import { checkBackendHealth } from './services/api';
+import botLogo from './assets/bot-logo.svg';
 import {
-  Bot,
   Sparkles,
   CheckCircle2,
   Layers,
@@ -38,9 +38,11 @@ export const App: React.FC = () => {
       <header className="border-b border-white/5 backdrop-blur-md bg-zinc-950/70 sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/30 shrink-0">
-              <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
+            <img
+              src={botLogo}
+              alt="AI Chatbot Widget"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-lg shadow-indigo-500/30 shrink-0 object-cover"
+            />
             <div className="flex items-center">
               <span className="font-bold text-sm sm:text-base tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
                 AI Chatbot Widget

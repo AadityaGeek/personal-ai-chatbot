@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bot, Heart, ExternalLink, Sparkles } from 'lucide-react';
+import { Heart, ExternalLink, Sparkles } from 'lucide-react';
+import botLogo from '../assets/bot-logo.svg';
 
 interface FooterProps {
   onOpenChat: () => void;
@@ -28,9 +29,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenChat, documentCount }) => 
           {/* Brand & Overview */}
           <div className="sm:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/25">
-                <Bot className="w-4 h-4" />
-              </div>
+              <img
+                src={botLogo}
+                alt="AI Chatbot Widget"
+                className="w-8 h-8 rounded-xl shadow-md shadow-indigo-500/25 object-cover"
+              />
               <span className="font-bold text-base tracking-tight text-white">
                 AI Chatbot Widget
               </span>

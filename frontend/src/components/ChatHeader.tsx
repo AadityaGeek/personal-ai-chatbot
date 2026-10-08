@@ -1,5 +1,6 @@
 import React from 'react';
-import { Bot, Trash2, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Trash2, X, Sparkles, RefreshCw } from 'lucide-react';
+import botLogo from '../assets/bot-logo.svg';
 
 interface ChatHeaderProps {
   onClose: () => void;
@@ -23,9 +24,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
       {/* Bot Identity */}
       <div className="flex items-center gap-3">
         <div className="relative">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
-            <Bot className="w-5 h-5" />
-          </div>
+          <img
+            src={botLogo}
+            alt="ChatBot AI"
+            className="w-9 h-9 rounded-xl shadow-md shadow-indigo-500/25 object-cover"
+          />
           <span
             className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-zinc-900 ${
               isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
