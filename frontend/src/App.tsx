@@ -4,16 +4,7 @@ import { Footer } from './components/Footer';
 import { checkBackendHealth } from './services/api';
 import botLogo from './assets/bot-logo.svg';
 import {
-  Sparkles,
-  CheckCircle2,
-  Layers,
-  ShieldCheck,
-  Cpu,
-  Search,
-  MessageSquare,
-  Lock,
-  ArrowUpRight,
-  Zap,
+  Sparkles, CheckCircle2, Layers, ShieldCheck, Cpu, Search, MessageSquare, Lock, ArrowUpRight, Zap,
 } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -29,10 +20,10 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-indigo-500 selection:text-white relative overflow-hidden">
-      {/* Background Ambient Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-indigo-600/20 via-violet-600/10 to-transparent blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] bg-indigo-500/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-10 -left-40 w-[500px] h-[500px] bg-violet-600/10 blur-[150px] pointer-events-none" />
+      {/* Background Ambient Glows - Clamped for mobile GPU performance */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 sm:w-[900px] h-60 sm:h-[450px] bg-gradient-to-b from-indigo-600/25 via-violet-600/10 to-transparent blur-2xl sm:blur-[140px] pointer-events-none transform-gpu" />
+      <div className="hidden sm:block absolute top-1/3 -right-40 w-[600px] h-[600px] bg-indigo-500/10 blur-[150px] pointer-events-none transform-gpu" />
+      <div className="hidden sm:block absolute bottom-10 -left-40 w-[500px] h-[500px] bg-violet-600/10 blur-[150px] pointer-events-none transform-gpu" />
 
       {/* Top Navigation */}
       <header className="border-b border-white/5 backdrop-blur-md bg-zinc-950/70 sticky top-0 z-30">
