@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field
@@ -24,7 +23,12 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         if not self.cors_origins or self.cors_origins.strip() == "*":
             return ["*"]
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        if self.environment == "development":
+            for local_origin in ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]:
+                if local_origin not in origins:
+                    origins.append(local_origin)
+        return origins
 
     class Config:
         env_file = BASE_DIR / ".env"

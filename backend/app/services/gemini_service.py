@@ -36,6 +36,29 @@ class GeminiService:
                 self._client = None
         return self._client
 
+    def _get_config(self):
+        from google.genai import types
+        return types.GenerateContentConfig(
+            temperature=settings.temperature,
+            system_instruction=SYSTEM_INSTRUCTION,
+        )
+
+    def _get_models_to_try(self) -> list[str]:
+        models = [settings.gemini_model]
+        for m in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash"]:
+            if m not in models:
+                models.append(m)
+        return models
+
+    def _get_offline_preview(self, context_docs: list[dict[str, Any]]) -> str:
+        top_doc = context_docs[0]
+        return (
+            f"*(Notice: GEMINI_API_KEY is not configured yet. Showing retrieved knowledge for preview)*\n\n"
+            f"### {top_doc.get('title')}\n\n"
+            f"{top_doc.get('content')}\n\n"
+            f"Configure `GEMINI_API_KEY` in `backend/.env` for real-time generative responses with `{settings.gemini_model}`."
+        )
+
     def _build_context_prompt(self, message: str, context_docs: list[dict[str, Any]]) -> str:
         if not context_docs:
             return message
@@ -46,7 +69,6 @@ class GeminiService:
         from google.genai import types
 
         contents = []
-        # Add past dialogue turns
         for item in history:
             role = "user" if item.role == "user" else "model"
             contents.append(
@@ -56,7 +78,6 @@ class GeminiService:
                 )
             )
 
-        # Augmented current turn
         prompt_with_context = self._build_context_prompt(user_message, context_docs)
         contents.append(
             types.Content(
@@ -66,47 +87,27 @@ class GeminiService:
         )
         return contents
 
-    def generate_chat_response(
+    async def generate_chat_response_async(
         self,
         message: str,
         history: list[HistoryMessage],
         context_docs: list[dict[str, Any]]
     ) -> tuple[str, list[SourceItem]]:
-        # If no knowledge documents matched the query, immediately return fallback
         if not context_docs:
             return FALLBACK_UNKNOWN_KNOWLEDGE, []
 
         client = self._get_client()
-
         if not client:
-            # Fallback if no API key is set yet
-            top_doc = context_docs[0]
-            fallback_msg = (
-                f"*(Notice: GEMINI_API_KEY is not configured yet. Showing retrieved knowledge for preview)*\n\n"
-                f"### {top_doc.get('title')}\n\n"
-                f"{top_doc.get('content')}\n\n"
-                f"Configure `GEMINI_API_KEY` in `backend/.env` for real-time generative responses with `{settings.gemini_model}`."
-            )
-            return fallback_msg, []
+            return self._get_offline_preview(context_docs), []
 
-        from google.genai import types
-
-        config = types.GenerateContentConfig(
-            temperature=settings.temperature,
-            system_instruction=SYSTEM_INSTRUCTION,
-        )
-
+        config = self._get_config()
         contents = self._build_contents(message, history, context_docs)
-        
-        models_to_try = [settings.gemini_model]
-        for m in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash"]:
-            if m not in models_to_try:
-                models_to_try.append(m)
+        models_to_try = self._get_models_to_try()
 
         last_error = None
         for m in models_to_try:
             try:
-                response = client.models.generate_content(
+                response = await client.aio.models.generate_content(
                     model=m,
                     contents=contents,
                     config=config,
@@ -125,13 +126,22 @@ class GeminiService:
             raise last_error
         return FALLBACK_UNKNOWN_KNOWLEDGE, []
 
+    def generate_chat_response(
+        self,
+        message: str,
+        history: list[HistoryMessage],
+        context_docs: list[dict[str, Any]]
+    ) -> tuple[str, list[SourceItem]]:
+        """Synchronous helper that runs the async generator."""
+        import asyncio
+        return asyncio.run(self.generate_chat_response_async(message, history, context_docs))
+
     async def stream_chat_response(
         self,
         message: str,
         history: list[HistoryMessage],
         context_docs: list[dict[str, Any]]
     ) -> AsyncGenerator[str, None]:
-        # If no knowledge documents matched the query, stream the fallback message directly
         if not context_docs:
             yield FALLBACK_UNKNOWN_KNOWLEDGE
             return
@@ -143,28 +153,19 @@ class GeminiService:
                 yield token + " "
             return
 
-        from google.genai import types
-
-        config = types.GenerateContentConfig(
-            temperature=settings.temperature,
-            system_instruction=SYSTEM_INSTRUCTION,
-        )
+        config = self._get_config()
         contents = self._build_contents(message, history, context_docs)
-
-        models_to_try = [settings.gemini_model]
-        for m in ["gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash"]:
-            if m not in models_to_try:
-                models_to_try.append(m)
+        models_to_try = self._get_models_to_try()
 
         stream_started = False
         for m in models_to_try:
             try:
-                response_stream = client.models.generate_content_stream(
+                response_stream = await client.aio.models.generate_content_stream(
                     model=m,
                     contents=contents,
                     config=config,
                 )
-                for chunk in response_stream:
+                async for chunk in response_stream:
                     if chunk.text:
                         stream_started = True
                         yield chunk.text
@@ -177,5 +178,6 @@ class GeminiService:
                 logger.error(f"Gemini streaming error: {e}")
                 yield f"\n\n[Error communicating with Gemini: {str(e)}]"
                 return
+
 
 gemini_service = GeminiService()

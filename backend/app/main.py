@@ -3,14 +3,14 @@ import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 from typing import Any, cast
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.models import ChatRequest, ChatResponse, HealthResponse, SourceItem
+from app.models import ChatRequest, ChatResponse, HealthResponse
 from app.rag.retriever import retriever
 from app.services.gemini_service import gemini_service
 
@@ -76,8 +76,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get(
+@app.api_route(
     "/api/health",
+    methods=["GET", "HEAD"],
     response_model=HealthResponse,
     tags=["Health"],
     summary="Health & Readiness Check",
@@ -107,8 +108,8 @@ async def chat_endpoint(request: Request, chat_req: ChatRequest):
         # 1. RAG retrieval
         context_docs = retriever.retrieve(chat_req.message, top_k=3)
         
-        # 2. Gemini generation with strict grounding instructions
-        response_text, _ = gemini_service.generate_chat_response(
+        # 2. Non-blocking async Gemini generation with strict grounding instructions
+        response_text, _ = await gemini_service.generate_chat_response_async(
             message=chat_req.message,
             history=chat_req.history,
             context_docs=context_docs

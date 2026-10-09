@@ -23,6 +23,7 @@ class KnowledgeRetriever:
         self.cache_path = cache_path
         self.documents: list[dict[str, Any]] = []
         self.embeddings: np.ndarray | None = None
+        self.norm_embeddings: np.ndarray | None = None
         self._genai_client = None
         self._load_knowledge()
 
@@ -41,7 +42,7 @@ class KnowledgeRetriever:
     def _compute_hash(self, content_str: str) -> str:
         return hashlib.sha256(content_str.encode("utf-8")).hexdigest()
 
-    def _chunk_text(self, text: str, max_chars: int = 1200, overlap: int = 150) -> list[str]:
+    def _chunk_text(self, text: str, max_chars: int = 1200) -> list[str]:
         text = text.strip()
         if not text:
             return []
@@ -271,6 +272,7 @@ class KnowledgeRetriever:
                     cache_data = json.load(f)
                     if cache_data.get("hash") == content_hash and "embeddings" in cache_data:
                         self.embeddings = np.array(cache_data["embeddings"], dtype=np.float32)
+                        self._update_normalized_embeddings()
                         logger.info(f"Loaded {len(self.embeddings)} cached embeddings.")
                         return
             except Exception as e:
@@ -314,6 +316,7 @@ class KnowledgeRetriever:
                 computed_embeddings.append(values)
 
             self.embeddings = np.array(computed_embeddings, dtype=np.float32)
+            self._update_normalized_embeddings()
 
             # Save cache
             self.cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -323,6 +326,15 @@ class KnowledgeRetriever:
         except Exception as e:
             logger.error(f"Failed to compute embeddings: {e}. Falling back to keyword search.")
             self.embeddings = None
+            self.norm_embeddings = None
+
+    def _update_normalized_embeddings(self):
+        if self.embeddings is not None and len(self.embeddings) > 0:
+            norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True)
+            norms[norms == 0] = 1e-10
+            self.norm_embeddings = self.embeddings / norms
+        else:
+            self.norm_embeddings = None
 
     def _keyword_search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
         stop_words = {
@@ -383,10 +395,15 @@ class KnowledgeRetriever:
                 else:
                     query_vec = np.array(res.values, dtype=np.float32)
 
-                # Compute cosine similarities
-                norm_docs = np.linalg.norm(self.embeddings, axis=1)
-                norm_query = np.linalg.norm(query_vec)
-                scores = np.dot(self.embeddings, query_vec) / (norm_docs * norm_query + 1e-10)
+                # Compute cosine similarities via pre-normalized dot product
+                query_norm = float(np.linalg.norm(query_vec))
+                query_vec_norm = query_vec / (query_norm + 1e-10) if query_norm > 0 else query_vec
+
+                if self.norm_embeddings is not None and len(self.norm_embeddings) == len(self.documents):
+                    scores = np.dot(self.norm_embeddings, query_vec_norm)
+                else:
+                    norm_docs = np.linalg.norm(self.embeddings, axis=1)
+                    scores = np.dot(self.embeddings, query_vec) / (norm_docs * (query_norm + 1e-10))
 
                 # Rank
                 ranked_indices = np.argsort(scores)[::-1]
