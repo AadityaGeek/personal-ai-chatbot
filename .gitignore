@@ -57,6 +57,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Brag video outputs & media (never pushed)
+brag-output*/
+brag-output/
+*.mp4
+demo/
+
+
 # IDE & Editor files
 .idea/
 .vscode/*

@@ -2,7 +2,9 @@
 
 A standalone, embeddable AI Chatbot widget system with a high-performance **FastAPI** backend and a sleek, glassmorphic **React + Tailwind CSS** frontend.
 
-Powered by **Google Gemini 3.5 Flash Lite** with temperature `0.2` and strictly grounded in a local **Vector RAG (Retrieval-Augmented Generation)** knowledge system (`data/knowledge.json`) to eliminate hallucinations and quickly answer questions with similar meanings using vector embeddings.
+Powered by **Google Gemini API** with temperature `0.2` and strictly grounded in a local **Vector RAG (Retrieval-Augmented Generation)** knowledge system (`data/knowledge.json`) to eliminate hallucinations and quickly answer questions with similar meanings using vector embeddings.
+
+https://github.com/user-attachments/assets/d8728a38-fadd-4769-b60d-1d0599237af5
 
 ---
 
@@ -12,7 +14,7 @@ Powered by **Google Gemini 3.5 Flash Lite** with temperature `0.2` and strictly 
 - **Strict Secrecy & Security Guardrails**:
   - Automatically refuses and protects against jailbreaks, prompt extraction, or requests to reveal internal system instructions, proprietary reasoning flows, and developer keys.
 - **Fast Vector Embeddings & Semantic Retrieval**:
-  - In-memory cosine similarity search using Google `gemini-embedding-001` embeddings.
+  - In-memory cosine similarity search using **Google Gemini Embeddings**.
   - Automatically understands semantically similar questions (e.g., *"how do I put this on my site?"* and *"can I embed this in React?"* match the same embedding guide).
   - Pure NumPy & Python math (zero C++ compilation or SQLite version issues on Windows).
   - Fast cold start and automatic SHA-256 cache invalidation (`data/embeddings_cache.json`).
@@ -48,7 +50,7 @@ ChatBot/
 │   │   ├── rag/
 │   │   │   └── retriever.py      # Vector cosine similarity index & cache
 │   │   └── services/
-│   │       └── gemini_service.py # Gemini 3.5 Flash Lite integration & guardrails
+│   │       └── gemini_service.py # Gemini API integration & guardrails
 │   └── data/
 │       ├── knowledge.json        # Chatbot documentation & knowledge base
 │       └── embeddings_cache.json # Auto-generated vector cache
